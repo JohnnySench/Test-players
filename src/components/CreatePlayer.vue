@@ -1,58 +1,53 @@
 <template>
     <h1>Добавить нового игрока</h1>
     <div class="row">
-        <input id="name" type="text" v-model="players_name" placeholder="Имя"/>
-        <input id="life" type="number" v-model="players_life" placeholder="Жизней" />
-        <button type="button" v-on:click="createPlayer">Создать</button>
+        <input id="name" type="text" v-model.trim="playersName" placeholder="Имя"/>
+        <input id="life" type="number" v-model="playersLife" placeholder="Жизней" />
+        <button type="button" @click="createPlayer">Создать</button>
     </div>
 </template>
 
 
-<script>
-export default {
-  name: 'CreatePlayer',
-  
-  data () {
-    return {
-      players: [],
-      players_name: '',
-      players_life: ''
-    };
-  },
-  
-  methods: {
-    createPlayer() {
+<script setup>
+import {ref, shallowRef, defineEmits} from "vue";
+import {useAlertModal} from '@/shared/hooks/useGlobalModals'
 
-        if(this.players_name === '' || this.players_name === undefined) {
-            alert('Укажите имя');
-            return;
-        }
+const players = ref([])
+const playersName = shallowRef('')
+const playersLife = shallowRef('')
 
-        if(this.players_life === '' || this.players_life === undefined) {
-            alert('Укажите количество жизней');
-            return;
-        }
 
-        if(this.players_life <= 0) {
-            alert('Значение не может быть больше нуля');
-            return;
-        }
+const emits = defineEmits(['players-list'])
+const createPlayer = async () => {
+  if(!playersName.value) {
+    await useAlertModal({isVisible: true, text: 'Укажите имя'})
+    return;
+  }
 
-        this.players.push({
-            'name': this.players_name,
-            'life': this.players_life,
-        })
+  if(!playersLife.value) {
+    await useAlertModal({isVisible: true, text: 'Укажите количество жизней'})
+    return;
+  }
 
-        this.players_name = '';
-        this.players_life = '';
+  if(playersLife.value <= 0) {
+    await useAlertModal({isVisible: true, text: 'Значение не может быть меньше или равно нулю'})
+    return;
+  }
 
-        this.$emit('players-list', this.players);
-    }
-  },
+  players.value.push({
+    name: playersName.value,
+    lifes: playersLife.value,
+    id: Date.now(),
+  })
+
+  playersName.value = '';
+  playersLife.value = '';
+
+  emits('players-list', players.value);
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
     .row {
         display: flex;
         margin-top: 20px;

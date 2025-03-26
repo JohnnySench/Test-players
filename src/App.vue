@@ -1,34 +1,40 @@
 <template>
-  <CreatePlayer @players-list="createdPlayers" />
-  <EditPlayers :playersList="playersList" />
+  <TabsPlayer @update:current-tab="currentTab = $event" />
+  <Component
+      :is="currentComponentByTab"
+      :playersList="playersList"
+      @players-list="createdPlayers"
+      @update:players-list="updatePlayers"
+      @update:player-name="updateName"
+  />
 </template>
 
-<script>
-import CreatePlayer from './components/CreatePlayer.vue'
-import EditPlayers from './components/EditPlayers.vue'
+<script setup>
+import TabsPlayer from "@/components/TabsPlayer.vue";
+import {computed, defineAsyncComponent, ref, shallowRef} from "vue";
 
-export default {
-  name: 'App',
-  components: {
-    CreatePlayer,
-    EditPlayers
-  },
-  data() {
-    return {
-      playersList: []
-    }
-  },
-
-  created() {
-    
-  },
-
-  methods: {
-    createdPlayers(list) {
-      this.playersList = list;
-    }
-  },
+const playersList = ref([])
+const createdPlayers = (list) => {
+  playersList.value = list;
 }
+
+const updatePlayers = (list) => {
+  playersList.value = list;
+}
+
+const updateName = ({value, id}) => {
+  playersList.value = playersList.value.map((player) => (player.id === id ? { ...player, name: value } : player))
+}
+
+
+const currentTab = shallowRef(0)
+
+const currentComponentByTab = computed(() => {
+    if (currentTab.value === 0) {
+      return defineAsyncComponent(() => import("@/components/CreatePlayer.vue"))
+    }
+    return defineAsyncComponent(() => import("@/components/EditPlayers.vue"))
+})
 </script>
 
 <style>

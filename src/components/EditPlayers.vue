@@ -1,79 +1,76 @@
 <template>
-  <h1>Редактирование игроков</h1>
-
-  <div
-    v-for="item in usersLife"
-    :key="item.name"
-    class="row"
-  >
-      <input id="name" v-model="item.name">
-      <a class="button" href="#" @click.prevent="minusLife(item)">-</a>
-      <span class="lifeCount">{{item.life}}</span>
-      <a class="button" href="#" @click.prevent="plusLife(item)">+</a>
-  </div>
-  
-  <h2>Рейтинг</h2>
-  <table>
-    <tr
-    v-for="(item, index) in rating"
-    :key="index"
+  <div v-if="playersList?.length">
+    <h1>Редактирование игроков</h1>
+    <div
+        v-for="({name, lifes, id}, index) in playersList"
+        :key="`${name}-${index}`"
+        class="row"
     >
-    <td v-text="`${index + 1}`"></td>
-    <td v-text="`У игрока <b>${item.name}</b> ${item.life} жизней`"></td>
-  </tr>
-  </table>
+      <UserPlayer
+          :lifes="lifes"
+          :name="name"
+          :id="id"
+          @click:plus-life="handleChangeValueLifes($event, 'plus')"
+          @click:minus-life="handleChangeValueLifes($event, 'minus')"
+          @update:player-name="handleChangeName"
+      />
+    </div>
+
+    <h2>Рейтинг</h2>
+    <table v-if="sortedRating?.length">
+      <tr
+          v-for="(item, index) in sortedRating"
+          :key="index"
+      >
+        <td v-text="`${index + 1}`"></td>
+        <td>
+          У игрока <b>{{item.name}}</b>, {{item.lifes}} жизней
+        </td>
+      </tr>
+    </table>
+  </div>
+  <div v-else>Нет созданных игроков</div>
+
 </template>
 
-<script>
-export default {
-  name: 'LifeCounter',
+<script setup>
+import {computed, defineProps, defineEmits} from "vue";
+import UserPlayer from "@/components/UserPlayer.vue";
 
-  props: {
-    playersList: {
-      type: Array
-    },
+const props = defineProps({
+  playersList: {
+    type: Array
   },
-  
-  data () {
+})
+
+const sortedRating = computed(() => {
+  return props.playersList.toSorted((a, b) => b.lifes - a.lifes)
+})
+
+
+const emits = defineEmits(['update:players-list', 'update:player-name']);
+const handleChangeValueLifes = (id, typeFn = 'plus') => {
+  const newPlayersList = props.playersList.map((player) => {
+    if (id === player.id) {
+      return {
+        ...player,
+        lifes: typeFn === 'plus' ? player.lifes + 1 : player.lifes - 1,
+      }
+    }
     return {
-    };
-  },
-  
-  created() {
-    for (let i = 0; i < this.playersList; i++) {
-      this.usersLife.push({
-        name: this.playersList.name,
-        life: this.playersList.life
-      });
+      ...player,
     }
-  },
-  
-  computed: {
-    usersLife () {
-      return [...this.playersList]
-    },
-    rating () {
-      let places = this.usersLife;
-  
-      places.sort((a, b) => b.life - a.life);
-     
-      return places;
-    }
-  },
-  
-  methods: {
-    plusLife (item) {
-      item.life++;
-    },
-
-    minusLife (item) {
-      item.life--;
-    }
-  },
+  })
+  emits('update:players-list', newPlayersList);
 }
+
+const handleChangeName = (data) => {
+  emits('update:player-name', data)
+}
+
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
     .row {
         display: flex;
         align-items: center;
